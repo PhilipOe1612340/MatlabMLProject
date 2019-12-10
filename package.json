@@ -1,0 +1,23 @@
+{
+  "name": "matlabmlproject",
+  "version": "1.0.0",
+  "description": "MatlabMLProject",
+  "main": "proxy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhilipOe1612340/MatlabMLProject.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PhilipOe1612340/MatlabMLProject/issues"
+  },
+  "homepage": "https://github.com/PhilipOe1612340/MatlabMLProject#readme",
+  "dependencies": {
+    "csv-load-sync": "^1.0.0",
+    "csv-writer": "^1.5.0"
+  }
+}
