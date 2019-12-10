@@ -4,7 +4,7 @@
   "description": "MatlabMLProject",
   "main": "loadData.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node loadData.js"
   },
   "repository": {
     "type": "git",

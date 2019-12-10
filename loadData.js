@@ -5,6 +5,7 @@ const loader = require("csv-load-sync");
 const config = { path: "", header: [] };
 
 const dataPadding = 100;
+const batch = 20;
 
 const base = "./SensorRecordings";
 
@@ -21,7 +22,7 @@ const yFile = "GPS.csv";
 
 getDirectories(base).forEach(folder => {
   // load X
-  let matrix = xFiles.map(file => loadFile(folder, file)).map(normalize);
+  let matrix = xFiles.map(file => loadFile(folder, file));
 
   // load y
   matrix.push(loadFile(folder, yFile));
@@ -45,7 +46,7 @@ getDirectories(base).forEach(folder => {
       ...matrix[6][i]
     })
   );
-  // @ts-ignore
+
   config.header = matrix
     .reduce((keys, curr) => keys.concat(Object.keys(curr[0] || {})), [])
     .map(key => ({ id: key, title: key }));
@@ -57,7 +58,12 @@ getDirectories(base).forEach(folder => {
   }
 
   // write to csv
-  write(config.path, merged);
+  const map = MinMaxMap(merged);
+
+  write(
+    config.path,
+    merged.map(line => normalize(line, map))
+  );
 });
 
 function getDirectories(source) {
@@ -113,13 +119,12 @@ function loadFile(folder, file) {
 }
 
 function write(path, content) {
-  const batch = 20;
   const lines = [];
 
   const datalines = content.map(c =>
     Object.keys(c)
       .map(k => c[k])
-      .join(" ")
+      .join(", ")
   );
 
   for (let i = 0; i < datalines.length - batch; i++) {
@@ -129,8 +134,7 @@ function write(path, content) {
   fs.writeFileSync(path, lines.join("\n"));
 }
 
-function normalize(all) {
-  return all;
+function MinMaxMap(all) {
   const blacklist = ["timestamp"];
   const map = {};
   Object.keys(all[0] || {})
@@ -139,20 +143,21 @@ function normalize(all) {
       const vals = all.map(v => parseFloat(v[k]));
       let max = Math.max(...vals);
       let min = Math.min(...vals);
-      max *= 0.1;
-      min *= 0.1;
 
       map[k] = { max, min };
     });
+  return map;
+}
 
-  return all.map(line =>
-    Object.keys(line).map(key => {
-      if (blacklist.includes(key)) {
-        return line[key];
-      }
-      const m = map[key];
-      const a = parseFloat(line[key]);
-      return 2 * (a - m.min / (m.max - m.min)) - 1;
-    })
-  );
+function normalize(line, map) {
+  const blacklist = ["timestamp"];
+
+  return Object.keys(line).map(key => {
+    if (blacklist.includes(key)) {
+      return line[key];
+    }
+    const m = map[key];
+    const a = parseFloat(line[key]);
+    return 2 * ((a - m.min) / (m.max - m.min)) - 1;
+  });
 }
