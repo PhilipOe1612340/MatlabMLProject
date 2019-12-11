@@ -8,6 +8,7 @@ const dataPadding = 100;
 const batch = 20;
 
 const base = "./SensorRecordings";
+const normalisationBlacklist = ["timestamp"];
 
 const xFiles = [
   "Accelerometer.csv",
@@ -52,7 +53,7 @@ getDirectories(base).forEach(folder => {
     .map(key => ({ id: key, title: key }));
 
   const outPath = "output";
-  config.path = path.join(outPath, folder + ".csv");
+  config.path = path.join(outPath, folder + ".MatlabData");
   if (!fs.existsSync(outPath)) {
     fs.mkdirSync(outPath);
   }
@@ -84,12 +85,7 @@ function loadFile(folder, file) {
 
   switch (file) {
     case "Accelerometer.csv": {
-      return contents.map(c => ({
-        timestamp: c.Milliseconds,
-        AccX: c.X,
-        AccY: c.Y,
-        AccZ: c.Z
-      }));
+      return contents.map(c => ({ timestamp: c.Milliseconds, AccX: c.X, AccY: c.Y, AccZ: c.Z }));
     }
     case "AccelerometerLinear.csv": {
       return contents.map(c => ({ AccLinX: c.X, AccLinY: c.Y, AccLinZ: c.Z }));
@@ -101,19 +97,13 @@ function loadFile(folder, file) {
       return contents.map(c => ({ GyrX: c.X, GyrY: c.Y, GyrZ: c.Z }));
     }
     case "RotationVector.csv": {
-      return contents.map(c => ({
-        RotVX: c.X,
-        RotVY: c.Y,
-        RotVZ: c.Z,
-        RotVcos: c.cos,
-        RotVacc: c.headingAccuracy
-      }));
+      return contents.map(c => ({ RotVX: c.X, RotVY: c.Y, RotVZ: c.Z, RotVcos: c.cos, RotVacc: c.headingAccuracy }));
     }
     case "Compass.csv": {
       return contents.map(c => ({ CompX: c.X, CompY: c.Y, CompZ: c.Z }));
     }
     case yFile: {
-      return contents.map(c => ({ GravX: c.X, GravY: c.Y, GravZ: c.Z }));
+      return contents.map(c => ({ GPSX: c.Latitude, GPSY: c.Longitude, GPSZ: c.Altitude }));
     }
   }
 }
@@ -124,7 +114,7 @@ function write(path, content) {
   const datalines = content.map(c =>
     Object.keys(c)
       .map(k => c[k])
-      .join(", ")
+      .join(" ")
   );
 
   for (let i = 0; i < datalines.length - batch; i++) {
@@ -135,14 +125,13 @@ function write(path, content) {
 }
 
 function MinMaxMap(all) {
-  const blacklist = ["timestamp"];
   const map = {};
   Object.keys(all[0] || {})
-    .filter(key => !blacklist.includes(key))
+    .filter(key => !normalisationBlacklist.includes(key))
     .map(k => {
-      const vals = all.map(v => parseFloat(v[k]));
-      let max = Math.max(...vals);
-      let min = Math.min(...vals);
+      const vals = all.map(v => parseFloat(v[k])).filter(v => !isNaN(v));
+      const max = Math.max(...vals);
+      const min = Math.min(...vals);
 
       map[k] = { max, min };
     });
@@ -150,14 +139,15 @@ function MinMaxMap(all) {
 }
 
 function normalize(line, map) {
-  const blacklist = ["timestamp"];
-
   return Object.keys(line).map(key => {
-    if (blacklist.includes(key)) {
+    if (normalisationBlacklist.includes(key)) {
       return line[key];
     }
     const m = map[key];
-    const a = parseFloat(line[key]);
-    return 2 * ((a - m.min) / (m.max - m.min)) - 1;
+    let a = parseFloat(line[key]);
+    a = 2 * ((a - m.min) / (m.max - m.min)) - 1;
+    a = !a || isNaN(a) ? 0 : a;
+
+    return a;
   });
 }
