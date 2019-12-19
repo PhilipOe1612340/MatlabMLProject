@@ -58,9 +58,16 @@ getDirectories(base).forEach(folder => {
     fs.mkdirSync(outPath);
   }
 
-  // write to csv
   const map = MinMaxMap(merged);
 
+  map.AccX = { max: 40, min: -40 };
+  map.AccY = { max: 40, min: -40 };
+  map.AccZ = { max: 40, min: -40 };
+  map.AccLinX = { max: 40, min: -40 };
+  map.AccLinY = { max: 40, min: -40 };
+  map.AccLinZ = { max: 40, min: -40 };
+
+  // write to csv
   write(
     config.path,
     merged.map(line => normalize(line, map))
@@ -85,7 +92,12 @@ function loadFile(folder, file) {
 
   switch (file) {
     case "Accelerometer.csv": {
-      return contents.map(c => ({ timestamp: c.Milliseconds, AccX: c.X, AccY: c.Y, AccZ: c.Z }));
+      return contents.map(c => ({
+        timestamp: c.Milliseconds,
+        AccX: c.X,
+        AccY: c.Y,
+        AccZ: c.Z
+      }));
     }
     case "AccelerometerLinear.csv": {
       return contents.map(c => ({ AccLinX: c.X, AccLinY: c.Y, AccLinZ: c.Z }));
@@ -97,13 +109,23 @@ function loadFile(folder, file) {
       return contents.map(c => ({ GyrX: c.X, GyrY: c.Y, GyrZ: c.Z }));
     }
     case "RotationVector.csv": {
-      return contents.map(c => ({ RotVX: c.X, RotVY: c.Y, RotVZ: c.Z, RotVcos: c.cos, RotVacc: c.headingAccuracy }));
+      return contents.map(c => ({
+        RotVX: c.X,
+        RotVY: c.Y,
+        RotVZ: c.Z,
+        RotVcos: c.cos,
+        RotVacc: c.headingAccuracy
+      }));
     }
     case "Compass.csv": {
       return contents.map(c => ({ CompX: c.X, CompY: c.Y, CompZ: c.Z }));
     }
     case yFile: {
-      return contents.map(c => ({ GPSX: c.Latitude, GPSY: c.Longitude, GPSZ: c.Altitude }));
+      return contents.map(c => ({
+        GPSX: c.Latitude,
+        GPSY: c.Longitude,
+        GPSZ: c.Altitude
+      }));
     }
   }
 }
