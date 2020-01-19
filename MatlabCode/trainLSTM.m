@@ -6,19 +6,22 @@ function [net]=trainLSTM(x_train,y_train,epochs,MiniBatchSize)
     attributes = size(x_train{1},1);
     %fprintf('attr:',attributes);
     inputSize = attributes;
-    numHiddenUnits = 100;
+    numHiddenUnits = 10;
     numClasses = 2;
 
     layers = [ ...
         sequenceInputLayer(inputSize)
         bilstmLayer(numHiddenUnits,'OutputMode','last')
+        fullyConnectedLayer(5)
         fullyConnectedLayer(numClasses)
         softmaxLayer
         classificationLayer];
     maxEpochs = epochs;
     miniBatchSize = MiniBatchSize;
 
+%     
     options = trainingOptions('adam', ...
+        'InitialLearnRate', 0.1, ...
         'ExecutionEnvironment','gpu', ...
         'GradientThreshold',1, ...
         'MaxEpochs',maxEpochs, ...
